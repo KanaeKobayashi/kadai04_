@@ -1,0 +1,62 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #FFF8E9; /* デフォルトの背景色 */
+  }
+button,
+input,
+select {
+    margin: 10px 0;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h2 {
+    padding-top: 30px;
+    text-align: center;
+}
+
+.input-section {
+    margin-bottom: 10px;
+}
+
+.input-section input[type="text"] {
+    width: 200px;
+    padding: 5px;
+}
+
+.input-section button {
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.status-section {
+    margin-top: 20px;
+}
+
+#chart {
+    max-width: 400px;
+    margin: 0 auto;
+}
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
+  }
+  
+  table th,
+  table td {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+  }
+  
+  table th {
+    background-color: #f0f0f0;
+  }
+  
+  table td {
+    text-align: center;
+  }

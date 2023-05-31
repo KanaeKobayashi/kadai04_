@@ -8,11 +8,30 @@ input,
 select {
     margin: 10px 0;
   }
-
+.project{
+  width: 20%;
+  height: 25px;
+  border-radius: 5px;
+  border: 1px;
+}
+.taskType{
+  width: 20%;
+  height: 25px;
+  border-radius: 5px;
+  border: 1px;
+}
+.addBtn{
+  width:100px
+}
+.newText{
+  width: 40%;
+}
   .container {
     max-width: 600px;
     margin: 0 auto;
     padding: 20px;
+    background: #ccc;
+    border-radius: 50px;
 }
 
 h2 {
@@ -25,13 +44,16 @@ h2 {
 }
 
 .input-section input[type="text"] {
-    width: 200px;
+    /* width: 200px; */
     padding: 5px;
+    border-radius: 5px;
+    border: 1px;
 }
 
 .input-section button {
     padding: 5px 10px;
     border-radius: 5px;
+    border: 1px;
 }
 
 .status-section {
@@ -55,8 +77,11 @@ table {
   
   table th {
     background-color: #f0f0f0;
+    font-size: 0.8rem;
   }
   
   table td {
+    
     text-align: center;
+    font-size: 0.8rem;
   }

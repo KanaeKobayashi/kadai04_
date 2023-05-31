@@ -107,7 +107,7 @@ function displayHistory() {
   
     // ヘッダー行を作成
     const headerRow = document.createElement('tr');
-    const headers = ['日付', 'プロジェクト', '仕事', '開始時間', '終了時間', '作業時間'];
+    const headers = ['Date', 'PJ', 'Task', 'Start', 'Finish', 'Total Time'];
     for (let header of headers) {
       const th = document.createElement('th');
       th.textContent = header;
@@ -165,71 +165,72 @@ function displayHistory() {
 function displayCurrentStatus() {
   if (currentTask) {
     const historyElement = document.getElementById('history');
-    historyElement.innerHTML = `プロジェクト: ${currentTask.project}, 仕事: ${currentTask.taskType}, 開始時間: ${currentTask.startTime} - 終了待ち...`;
+    historyElement.innerHTML = ` ${currentTask.project},  ${currentTask.taskType} <br>Start: ${currentTask.startTime}<br> - 進行中...`;
   }
 }
 
-function drawChart() {
-    const history = JSON.parse(localStorage.getItem('history')) || [];
+// function drawChart() {
+//     const history = JSON.parse(localStorage.getItem('history')) || [];
 
-    let labels = [];
-    let data = [];
-    let backgroundColors = [];
+//     let labels = [];
+//     let data = [];
+//     let backgroundColors = [];
   
-    for (let item of history) {
-      const label = `${item.project} - ${item.taskType}`;
-      if (!labels.includes(label)) {
-        labels.push(label);
-        data.push(item.hoursWorked);
-        // グラフの要素ごとに異なる色を設定する
-        const color = getRandomColor();
-        backgroundColors.push(color);
-      } else {
-        const index = labels.indexOf(label);
-        data[index] += item.hoursWorked;
-      }
-    }
+//     for (let item of history) {
+//       const label = `${item.project} - ${item.taskType}`;
+//       if (!labels.includes(label)) {
+//         labels.push(label);
+//         data.push(item.hoursWorked);
+//         // グラフの要素ごとに異なる色を設定する
+//         const color = getRandomColor();
+//         backgroundColors.push(color);
+//       } else {
+//         const index = labels.indexOf(label);
+//         data[index] += item.hoursWorked;
+//       }
+//     }
   
-    const ctx = document.getElementById('chart').getContext('2d');
+//     const ctx = document.getElementById('chart').getContext('2d');
     
-    // 既存のチャートを破棄する
-    if (Chart.instances.length > 0) {
-      Chart.instances.forEach(chart => {
-        chart.destroy();
-      });
-    }
+//     // 既存のチャートを破棄する
+//     if (Chart.instances.length > 0) {
+//       Chart.instances.forEach(chart => {
+//         chart.destroy();
+//       });
+//     }
   
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: '作業時間 (時間)',
-          data: data,
-          backgroundColor: backgroundColors,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        plugins: {
-          legend: {
-            position: 'right'
-          }
-        }
-      }
-    });
-  }
+//     new Chart(ctx, {
+//       type: 'doughnut',
+//       data: {
+//         labels: labels,
+//         datasets: [{
+//           label: '作業時間 (時間)',
+//           data: data,
+//           backgroundColor: backgroundColors,
+//           borderColor: 'rgba(75, 192, 192, 1)',
+//           borderWidth: 1
+//         }]
+//       },
+//       options: {
+//         plugins: {
+//           legend: {
+//             position: 'right'
+//           }
+//         }
+//       }
+//     });
+//   }
 
-function getRandomColor() {
-  // ランダムなRGB値を生成する
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  // CSSカラー文字列に変換して返す
-  return `rgba(${r}, ${g}, ${b}, 0.2)`;
-}
+// function getRandomColor() {
+//   // ランダムなRGB値を生成する
+//   const r = Math.floor(Math.random() * 256);
+//   const g = Math.floor(Math.random() * 256);
+//   const b = Math.floor(Math.random() * 256);
+//   // CSSカラー文字列に変換して返す
+//   return `rgba(${r}, ${g}, ${b}, 0.2)`;
+// }
 
+// csvデータを作って吐き出す
 function convertToCSV(data) {
   const csvRows = [];
   const headers = Object.keys(data[0]);
@@ -288,5 +289,5 @@ function startBackgroundTimer() {
 displayProjects();
 displayTaskTypes();
 displayHistory();
-drawChart();
+// drawChart();
 startBackgroundTimer();

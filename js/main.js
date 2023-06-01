@@ -1,5 +1,6 @@
 let currentTask = null;
 
+// 日付と時間を表示する
 function getCurrentTime() {
   const now = new Date();
   const year = now.getFullYear().toString();
@@ -10,6 +11,7 @@ function getCurrentTime() {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
+// プロジェクトを追加する
 function addProject() {
   const newProject = document.getElementById("newProject").value;
   if (!newProject) {
@@ -21,8 +23,10 @@ function addProject() {
   document.getElementById("newProject").value = "";
   displayProjects();
 }
-
+// プロジェクトを表示する
 function displayProjects() {
+  /* ローカルストレージからprojectsのデータを取得し、それをJSONとしてパースする。
+  もしデータが存在しない場合は、空の配列を使う*/
   const projects = JSON.parse(localStorage.getItem("projects")) || [];
   const projectElement = document.getElementById("project");
   projectElement.innerHTML = "";
@@ -33,7 +37,7 @@ function displayProjects() {
     projectElement.appendChild(option);
   }
 }
-
+// タスクを追加する
 function addTaskType() {
   const newTaskType = document.getElementById("newTaskType").value;
   if (!newTaskType) {
@@ -45,7 +49,7 @@ function addTaskType() {
   document.getElementById("newTaskType").value = "";
   displayTaskTypes();
 }
-
+// タスクを表示する
 function displayTaskTypes() {
   const taskTypes = JSON.parse(localStorage.getItem("taskTypes")) || [];
   const taskTypeElement = document.getElementById("taskType");
@@ -57,7 +61,7 @@ function displayTaskTypes() {
     taskTypeElement.appendChild(option);
   }
 }
-
+// タスクを開始
 function startTask() {
   const project = document.getElementById("project").value;
   const taskType = document.getElementById("taskType").value;
@@ -70,15 +74,15 @@ function startTask() {
   };
   displayCurrentStatus();
 }
-
+// タスクのIDを削除する
 function removeTask(id) {
   let history = JSON.parse(localStorage.getItem("history")) || [];
   history = history.filter((item) => item.id !== id); // IDが一致するアイテムをフィルタリング
   localStorage.setItem("history", JSON.stringify(history));
   displayHistory();
-  drawChart();
+  drawStackedChart();
 }
-
+// 時間を分で表す
 function calculateMinutesWorked(startTime, endTime) {
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -86,23 +90,7 @@ function calculateMinutesWorked(startTime, endTime) {
   return minutesWorked;
 }
 
-function endTask() {
-  const endTime = getCurrentTime();
-  currentTask.endTime = endTime;
-  currentTask.minutesWorked = calculateMinutesWorked(
-    currentTask.startTime,
-    currentTask.endTime
-  );
-
-  let history = JSON.parse(localStorage.getItem("history")) || [];
-  history.push(currentTask);
-  localStorage.setItem("history", JSON.stringify(history));
-
-  currentTask = null;
-  displayHistory();
-  drawChart();
-}
-
+// 表を表示する
 function displayHistory() {
   const history = JSON.parse(localStorage.getItem("history")) || [];
   const historyTable = document.getElementById("history");
@@ -153,7 +141,8 @@ function displayHistory() {
 
     const deleteCell = document.createElement("td");
     const deleteButton = document.createElement("button");
-    deleteButton.textContent = "削除";
+    deleteButton.innerHTML =
+      '<span class="material-icons-outlined">delete</span>';
     deleteButton.addEventListener("click", function () {
       removeTask(item.id);
     });
@@ -163,7 +152,7 @@ function displayHistory() {
     historyTable.appendChild(itemRow);
   }
 }
-
+// ボタンを押した時の状態を表示する
 function displayCurrentStatus() {
   if (currentTask) {
     const historyElement = document.getElementById("history");
@@ -171,70 +160,118 @@ function displayCurrentStatus() {
   }
 }
 
-function drawChart() {
-  const history = JSON.parse(localStorage.getItem("history")) || [];
+// グラフを作って表示する
+window.myChart = null;
 
-  let labels = [];
-  let data = [];
-  let backgroundColors = [];
+function createProjectTaskData() {
+  const history = JSON.parse(localStorage.getItem("history")) || [];
+  let projectData = {};
 
   for (let item of history) {
-    const label = `${item.project} - ${item.taskType}`;
-    if (!labels.includes(label)) {
-      labels.push(label);
-      data.push(item.hoursWorked);
-      // グラフの要素ごとに異なる色を設定する
-      const color = getRandomColor();
-      backgroundColors.push(color);
-    } else {
-      const index = labels.indexOf(label);
-      data[index] += item.hoursWorked;
+    const { project, taskType, minutesWorked } = item;
+
+    if (!(project in projectData)) {
+      projectData[project] = {};
     }
+
+    if (!(taskType in projectData[project])) {
+      projectData[project][taskType] = 0;
+    }
+
+    projectData[project][taskType] += minutesWorked;
+  }
+
+  return projectData;
+}
+
+// 積み上げ式棒グラフを作成する
+function drawStackedChart() {
+  const projectData = createProjectTaskData();
+  const projects = Object.keys(projectData);
+  let labels = [];
+  let taskTypes = [];
+
+  for (let project of projects) {
+    const taskData = projectData[project];
+    labels.push(project);
+    taskTypes = [...new Set([...taskTypes, ...Object.keys(taskData)])];
+  }
+
+  let data = [];
+  for (let project of projects) {
+    const taskData = projectData[project];
+    let projectDataArray = [];
+    for (let taskType of taskTypes) {
+      projectDataArray.push(taskData[taskType] || 0);
+    }
+    data.push(projectDataArray);
+  }
+
+  let datasets = [];
+  for (let i = 0; i < taskTypes.length; i++) {
+    const color = getRandomColor();
+    datasets.push({
+      label: taskTypes[i],
+      data: data.map((projectDataArray) => projectDataArray[i]),
+      backgroundColor: color,
+    });
   }
 
   const ctx = document.getElementById("chart").getContext("2d");
 
-  // 既存のチャートを破棄する
-  if (Chart.instances.length > 0) {
-    Chart.instances.forEach((chart) => {
-      chart.destroy();
-    });
+  if (window.myChart) {
+    window.myChart.destroy();
   }
 
-  new Chart(ctx, {
-    type: "doughnut",
+  window.myChart = new Chart(ctx, {
+    type: "bar",
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: "作業時間 (時間)",
-          data: data,
-          backgroundColor: backgroundColors,
-          borderColor: "rgba(75, 192, 192, 1)",
-          borderWidth: 1,
-        },
-      ],
+      datasets: datasets,
     },
     options: {
-      plugins: {
-        legend: {
-          position: "right",
+      scales: {
+        y: {
+          beginAtZero: true,
+          stacked: true,
+        },
+        x: {
+          stacked: true,
         },
       },
     },
   });
 }
 
+// ランダムな色でグラフを表示します
 function getRandomColor() {
-  // ランダムなRGB値を生成する
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  // CSSカラー文字列に変換して返す
-  return `rgba(${r}, ${g}, ${b}, 0.2)`;
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 }
 
-// csvデータを作って吐き出す
+// タスクの終了
+function endTask() {
+  const endTime = getCurrentTime();
+  currentTask.endTime = endTime;
+  currentTask.minutesWorked = calculateMinutesWorked(
+    currentTask.startTime,
+    currentTask.endTime
+  );
+
+  let history = JSON.parse(localStorage.getItem("history")) || [];
+  history.push(currentTask);
+  localStorage.setItem("history", JSON.stringify(history));
+
+  currentTask = null;
+  displayHistory();
+  drawStackedChart();
+}
+
+// csvデータを作ってダウンロードできるようにする
 function convertToCSV(data) {
   const csvRows = [];
   const headers = Object.keys(data[0]);
@@ -248,8 +285,8 @@ function convertToCSV(data) {
     });
     csvRows.push(values.join(","));
   }
-
-  return csvRows.join("\n");
+  // windows PCで文字化けしないようにBOM(Byte Order Mark)を追加する
+  return "\ufeff" + csvRows.join("\n");
 }
 
 function downloadCSV(filename, data) {
@@ -267,18 +304,18 @@ function exportToCSV() {
   const csvData = convertToCSV(history);
   downloadCSV("history.csv", csvData);
 }
-
+// 時間によって変化する背景を実装する
 function changeBackgroundColor() {
   const currentHour = new Date().getHours();
 
   let backgroundColor = "";
 
   if (currentHour >= 6 && currentHour < 12) {
-    backgroundColor = "lightblue"; // 朝は青
+    backgroundColor = "#FFF7E9"; // 朝は薄い黄色
   } else if (currentHour >= 12 && currentHour < 18) {
-    backgroundColor = "#d0e2be"; // 昼は薄い緑色
+    backgroundColor = "#EFBAAA"; // 昼はピンク
   } else {
-    backgroundColor = "#FFEEFF"; // 夜は薄い紫色
+    backgroundColor = "#604D42"; // 夜は茶色
   }
 
   document.body.style.backgroundColor = backgroundColor;
@@ -290,8 +327,33 @@ function startBackgroundTimer() {
   setInterval(changeBackgroundColor, 60000); // 1分ごとに実行
 }
 
+// 現在の時間を表示
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear().toString();
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
+  const day = now.getDate().toString().padStart(2, "0");
+  const hours = now.getHours().toString().padStart(2, "0");
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+  return dateTimeString;
+}
+
+function updateDateTime() {
+  const datetimeElement = document.getElementById("datetime");
+  datetimeElement.textContent = getCurrentDateTime();
+}
+
+// 初回の表示
+updateDateTime();
+
+// 1分ごとに更新
+setInterval(updateDateTime, 60000);
+setInterval(drawStackedChart, 60000);
+
+updateDateTime();
 displayProjects();
 displayTaskTypes();
 displayHistory();
-drawChart();
+drawStackedChart();
 startBackgroundTimer();
